@@ -12,8 +12,9 @@ db = SQLAlchemy(app)
 class SongModel(db.Model):
     song_id = db.Column(db.Integer, primary_key=True) # primary key to ensure unique identifier for the song
     song_name = db.Column(db.String(100))
-    artist_name = db.Column(db.String(100)) # maybe need to add string length (String(100))
+    artist_name = db.Column(db.String(100))
     release_year = db.Column(db.Integer)
+    album_name = db.Column(db.String(100))
 
 db.create_all()
 
@@ -21,6 +22,7 @@ song_post_args = reqparse.RequestParser()
 song_post_args.add_argument("song_name", type=str)
 song_post_args.add_argument("artist_name", type=str)
 song_post_args.add_argument("release_year", type=int)
+song_post_args.add_argument("album_name", type=str)
 
 
 add_streams_args = reqparse.RequestParser()
@@ -31,7 +33,8 @@ resource_fields = {
     'song_id': fields.Integer,
     'song_name': fields.String,
     'artist_name': fields.String,
-    'release_year': fields.Integer
+    'release_year': fields.Integer,
+    'album_name': fields.String
 }
 
 
@@ -50,7 +53,7 @@ class Song(Resource):
     def post(self, song_id): # adds new song to the database
         args = song_post_args.parse_args()
 
-        song = SongModel(song_id=song_id, song_name=args['song_name'], artist_name=args['artist_name'], release_year=args['release_year'])
+        song = SongModel(song_id=song_id, song_name=args['song_name'], artist_name=args['artist_name'], release_year=args['release_year'], album_name=args['album_name'])
 
         db.session.add(song)
         db.session.commit()
