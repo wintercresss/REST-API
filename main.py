@@ -57,17 +57,16 @@ class Song(Resource):
         return song
     
 
-
-
-
     def delete(self, song_id): # deletes song from database
-        if song_id not in allsongs:
-            abort(404, message="can't find the song")
+        result = SongModel.query.filter_by(song_id=song_id).first()
+        if not result: # if the song isn't in the database
+            abort(404, message="Can't find the song")
         
-        else:
-            del allsongs[song_id]
-            return f'successfully deleted song_id: {song_id}'
-    
+        db.session.delete(result)
+        db.session.commit()
+        return f"deleted song: {result.song_name} by {result.artist_name}"
+
+
     def patch(self, song_id): # increases the number of streams for song
         newstreams = add_streams_args.parse_args()
 
