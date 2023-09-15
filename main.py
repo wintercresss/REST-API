@@ -4,10 +4,22 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 api = Api(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+db = SQLAlchemy(app)
+
+
+
+class SongModel(db.Model):
+    song_id = db.Column(db.Integer, primary_key=True) # primary key to ensure unique identifier for the song
+    song_name = db.Column(db.String(100))
+    artist_name = db.Column(db.String(100)) # maybe need to add string length (String(100))
+    release_year = db.Column(db.Integer)
+
+db.create_all()
 
 song_post_args = reqparse.RequestParser()
-song_post_args.add_argument("name", type=str)
-song_post_args.add_argument("artist", type=str)
+song_post_args.add_argument("song_name", type=str)
+song_post_args.add_argument("artist_name", type=str)
 song_post_args.add_argument("release_year", type=int)
 
 
@@ -15,22 +27,40 @@ add_streams_args = reqparse.RequestParser()
 add_streams_args.add_argument("streams", type=int)
 
 
-allsongs = {}
+resource_fields = {
+    'song_id': fields.Integer,
+    'song_name': fields.String,
+    'artist_name': fields.String,
+    'release_year': fields.Integer
+}
+
+
 
 class Song(Resource):
-    def get(self, song_id):
-        if song_id not in allsongs:
-            abort(404, message="song doesn't exist")
-        return allsongs[song_id]
-    
-    def post(self, song_id):
-        args = song_post_args.parse_args()
-        args["streams"] = 0
-        allsongs[song_id] = args
+    @marshal_with(resource_fields)
+    def get(self, song_id): # gets the information about the song given the song ID
+        result = SongModel.query.filter_by(song_id=song_id).first()
 
-        return allsongs[song_id]
+        if not result: # error message if song isn't in the database
+            abort(404, message="song doesn't exist")
+
+        return result
     
-    def delete(self, song_id):
+    @marshal_with(resource_fields)
+    def post(self, song_id): # adds new song to the database
+        args = song_post_args.parse_args()
+
+        song = SongModel(song_id=song_id, song_name=args['song_name'], artist_name=args['artist_name'], release_year=args['release_year'])
+
+        db.session.add(song)
+        db.session.commit()
+        return song
+    
+
+
+
+
+    def delete(self, song_id): # deletes song from database
         if song_id not in allsongs:
             abort(404, message="can't find the song")
         
@@ -38,7 +68,7 @@ class Song(Resource):
             del allsongs[song_id]
             return f'successfully deleted song_id: {song_id}'
     
-    def patch(self, song_id):
+    def patch(self, song_id): # increases the number of streams for song
         newstreams = add_streams_args.parse_args()
 
         allsongs[song_id]['streams'] += newstreams['streams']
