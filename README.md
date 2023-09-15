@@ -1,2 +1,2 @@
 # REST-API
-REST API using Flask and SQLAlchemy
+Music database REST API using Flask and SQLAlchemy
