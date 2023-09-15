@@ -10,6 +10,11 @@ song_post_args.add_argument("name", type=str)
 song_post_args.add_argument("artist", type=str)
 song_post_args.add_argument("release_year", type=int)
 
+
+add_streams_args = reqparse.RequestParser()
+add_streams_args.add_argument("streams", type=int)
+
+
 allsongs = {}
 
 class Song(Resource):
@@ -19,9 +24,10 @@ class Song(Resource):
         return allsongs[song_id]
     
     def post(self, song_id):
-        args = song_post_args.parse_args() # 
-
+        args = song_post_args.parse_args()
+        args["streams"] = 0
         allsongs[song_id] = args
+
         return allsongs[song_id]
     
     def delete(self, song_id):
@@ -31,6 +37,15 @@ class Song(Resource):
         else:
             del allsongs[song_id]
             return f'successfully deleted song_id: {song_id}'
+    
+    def patch(self, song_id):
+        newstreams = add_streams_args.parse_args()
+
+        allsongs[song_id]['streams'] += newstreams['streams']
+
+        newcount = allsongs[song_id]['streams']
+
+        return f'new number of streams: {newcount}'
 
 
 
