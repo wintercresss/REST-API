@@ -15,6 +15,7 @@ class SongModel(db.Model):
     artist_name = db.Column(db.String(100))
     release_year = db.Column(db.Integer)
     album_name = db.Column(db.String(100))
+    streams = db.Column(db.Integer)
 
 db.create_all()
 
@@ -34,7 +35,8 @@ resource_fields = {
     'song_name': fields.String,
     'artist_name': fields.String,
     'release_year': fields.Integer,
-    'album_name': fields.String
+    'album_name': fields.String,
+    'streams': fields.Integer
 }
 
 
@@ -53,7 +55,8 @@ class Song(Resource):
     def post(self, song_id): # adds new song to the database
         args = song_post_args.parse_args()
 
-        song = SongModel(song_id=song_id, song_name=args['song_name'], artist_name=args['artist_name'], release_year=args['release_year'], album_name=args['album_name'])
+        song = SongModel(song_id=song_id, song_name=args['song_name'], artist_name=args['artist_name'], release_year=args['release_year'], album_name=args['album_name'],
+                        streams=0)
 
         db.session.add(song)
         db.session.commit()
@@ -71,13 +74,16 @@ class Song(Resource):
 
 
     def patch(self, song_id): # increases the number of streams for song
+        result = SongModel.query.filter_by(song_id=song_id).first()
+        if not result:
+            abort(404, message="Can't find the song")
+
         newstreams = add_streams_args.parse_args()
+        newstream_amount = newstreams['streams']
 
-        allsongs[song_id]['streams'] += newstreams['streams']
-
-        newcount = allsongs[song_id]['streams']
-
-        return f'new number of streams: {newcount}'
+        result.streams += newstream_amount
+        db.session.commit()
+        return f'streams increased by {newstream_amount}! New stream count for {result.song_name} is {result.streams}'
 
 
 
